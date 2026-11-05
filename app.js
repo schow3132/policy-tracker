@@ -1,4 +1,4 @@
-/* Policy Tracker: renders data/tracker.json (generated from the spreadsheet by update-data.ps1).
+﻿/* Policy Tracker: renders data/tracker.json (generated from the spreadsheet by update-data.ps1).
    Sheets are found by name and tables by their header labels, so the workbook layout can grow
    (more rows, more candidates, more policies) without code changes. */
 (function () {
@@ -119,7 +119,8 @@
 
   /* ---------- shared bits ---------- */
   const party = (p) => `<span class="pty pty--${esc(p)}" aria-label="${p === "D" ? "Democrat" : p === "R" ? "Republican" : esc(p)}">${esc(p)}</span>`;
-  const glyph = (st) => GLYPH[st] ? `<span class="glyph glyph--${st}" aria-hidden="true">${GLYPH[st]}</span>` : `<span class="glyph glyph--silent" aria-hidden="true"></span>`;
+  // stance marker: shape + color (filled circle / half circle / square), so it never relies on color alone
+  const glyph = (st) => `<span class="unit unit--${GLYPH[st] ? st : "silent"}" aria-hidden="true"></span>`;
   const isPrimary = (c) => clean(c["Source class"]).toLowerCase().startsWith("primary");
   const srcLabel = (c) => {
     const s = clean(c["Source class"]);
@@ -173,7 +174,6 @@
   /* ---------- views ---------- */
   function renderOverview() {
     const asOf = (subtitle("Dashboard").match(/Data as of[^|]*/) || [""])[0].trim();
-    $("#hero-eyebrow").textContent = clean(subtitle("Dashboard").split("|")[0]) || "2026 midterms";
     const prim = M.claims.filter(isPrimary).length;
     const urls = uniq(M.claims.map((c) => safeUrl(c["Source URL"]))).length;
     const k = [
@@ -184,9 +184,9 @@
       [urls, "distinct source pages"],
       [num(below("Dashboard", "NOMINEES TRACKED")) ?? "–", "nominees tracked, including House"],
     ];
-    $("#kpis").innerHTML = k.map(([v, l]) => `<div class="kpi"><div class="kpi__v">${esc(v)}</div><div class="kpi__l">${esc(l)}</div></div>`).join("");
+    $("#kpis").innerHTML = k.map(([v, l]) => `<div class="stat"><dt>${esc(v)}</dt><dd>${esc(l)}</dd></div>`).join("");
 
-    // race cards
+    // statewide results table (one row per race, D and R side by side)
     const groups = [];
     M.statewide.rows.forEach((r) => {
       const key = clean(r.State) + "|" + clean(r.Office);
@@ -194,26 +194,20 @@
       if (!g) groups.push((g = { key, state: clean(r.State), office: clean(r.Office), rows: [] }));
       g.rows.push(r);
     });
-    const maxRec = Math.max(1, ...M.statewide.rows.map((r) => num(r["Total receipts ($)"]) || 0));
-    $("#race-cards").innerHTML = groups.map((g) => {
-      const res = g.rows.map((r) => clean(r["Result (media projections)"]));
-      const close = res.some((x) => /too close/i.test(x));
-      const chip = close ? `<span class="chip chip--close">Too close to call</span>` : res.some((x) => /winner/i.test(x)) ? `<span class="chip chip--win">Projected</span>` : `<span class="chip">Uncalled</span>`;
-      return `<article class="race">
-        <div class="race__head"><span class="race__title">${esc(g.state)} · ${esc(g.office)}</span>${chip}</div>
-        ${g.rows.map((r) => {
-          const rec = num(r["Total receipts ($)"]);
-          const win = /winner/i.test(r["Result (media projections)"]);
-          const t = tip(`<b>${esc(r.Candidate)}</b>${esc(r["Seat status"])} · ${esc(r["Result (media projections)"])}<div class="tip__m">${rec != null ? `Raised ${money(rec)} · spent ${money(r["Total disbursements ($)"])} (FEC)` : esc(r["Funding source"])}</div>`);
-          return `<div class="race__row" data-tip="${t}">
-            ${party(clean(r.Party))}
-            <div><div class="race__name ${win ? "is-win" : ""}">${esc(r.Candidate)}</div>
-              ${rec != null ? `<div class="bar" style="width:${(rec / maxRec) * 100}%;background:var(--${clean(r.Party) === "D" ? "dem" : "rep"})"></div>` : ""}</div>
-            <div class="race__money">${rec != null ? money(rec) + " raised" : "State filer"}</div>
-          </div>`;
-        }).join("")}
-      </article>`;
-    }).join("");
+    const cand = (r) => {
+      if (!r) return "<td>–</td>";
+      const rec = num(r["Total receipts ($)"]);
+      const res = clean(r["Result (media projections)"]);
+      const win = /winner/i.test(res);
+      return `<td class="${win ? "is-win" : ""}"><span class="res__name">${esc(r.Candidate)}</span>${win ? `<span class="res__check" aria-label="Projected winner">✓</span>` : ""}
+        <span class="res__sub">${esc(r["Seat status"])} · ${rec != null ? money(rec) + " raised (FEC)" : "State filer"}</span></td>`;
+    };
+    $("#race-table").innerHTML = `<thead><tr><th>Race</th><th class="th-d">Democrat</th><th class="th-r">Republican</th><th>Status</th></tr></thead><tbody>${groups.map((g) => {
+      const d = g.rows.find((r) => clean(r.Party) === "D"), r = g.rows.find((x) => clean(x.Party) === "R");
+      const res = g.rows.map((x) => clean(x["Result (media projections)"]));
+      const status = res.some((x) => /too close/i.test(x)) ? `<span class="flag flag--close">Too close to call</span>` : res.some((x) => /winner/i.test(x)) ? `Projected${res.some((x) => /conceded/i.test(x)) ? ", conceded" : ""}` : "Uncalled";
+      return `<tr><th scope="row"><span class="res__race">${esc(g.state)}</span><span class="res__sub">${esc(g.office)}</span></th>${cand(d)}${cand(r)}<td>${status}</td></tr>`;
+    }).join("")}</tbody>`;
 
     // consensus bars (single series)
     const counts = {};
@@ -237,7 +231,9 @@
           <div class="hbar__track">${seg(d, "var(--dem)", "D projected")}${seg(rp, "var(--rep)", "R projected")}${seg(u, "var(--axis)", "uncalled or not pulled")}<span class="hbar__val">${seats} seats${d || rp ? ` · ${d} D, ${rp} R` : ""}</span></div></div>`;
       }).join("")}</div>`;
 
-    $("#notice").innerHTML = `<div class="wrap">${asOf ? "<b>" + esc(asOf.replace(/\s*\(.*\)/, "")) + ".</b> " : ""}Election results shown are media projections, not certified. Positions are coded only from what candidates stated.</div>`;
+    const asOfShort = asOf.replace(/\s*\(.*\)/, "");
+    $("#notice").innerHTML = `<b>Note:</b> Election results are media projections and have not been certified.${asOfShort ? " " + esc(asOfShort) + "." : ""}`;
+    $("#masthead-meta").textContent = asOfShort ? asOfShort.replace(/^Data as of/, "Updated") : "";
   }
 
   function renderPolicies() {
@@ -245,7 +241,7 @@
     const D = M.cands.filter((c) => c.party === "D"), R = M.cands.filter((c) => c.party === "R");
     $("#policies-sub").textContent = `${P.rows.length} contested policies, and where each of the ${D.length} Democratic and ${R.length} Republican statewide nominees stands. Open a policy to read every claim behind it.`;
     $("#policy-method").textContent = findText("Policy Index", "Method:");
-    $("#policy-legend").innerHTML = `<span><i class="unit unit--Support"></i>Support</span><span><i class="unit unit--Middle"></i>Middle (partial or conditional)</span><span><i class="unit unit--Oppose"></i>Oppose</span><span><i class="unit unit--silent"></i>No stated position</span><span>One dot per nominee</span>`;
+    $("#policy-legend").innerHTML = `<span><i class="unit unit--Support"></i>Support</span><span><i class="unit unit--Middle"></i>Middle (partial or conditional)</span><span><i class="unit unit--Oppose"></i>Oppose</span><span><i class="unit unit--silent"></i>No stated position</span><span>One marker per nominee</span>`;
     $("#policy-filters").innerHTML = `<input type="search" id="pf-q" placeholder="Search policies" aria-label="Search policies">
       ${select("pf-issue", "Issue area", uniq(P.rows.map((p) => clean(p["Issue area"]))), "All issue areas")}
       ${select("pf-cons", "Consensus", uniq(P.rows.map((p) => clean(p.Consensus))), "Any consensus")}`;
@@ -455,8 +451,8 @@
     const [name, qs] = (location.hash.slice(1) || "overview").split("?");
     const v = VIEWS.includes(name) ? name : "overview";
     VIEWS.forEach((x) => ($("#view-" + x).hidden = x !== v));
-    document.querySelectorAll(".tabs a").forEach((a) => { if (a.getAttribute("href") === "#" + v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-    const active = $(`.tabs a[href="#${v}"]`); if (active) active.scrollIntoView({ block: "nearest", inline: "nearest" });
+    document.querySelectorAll(".sections a").forEach((a) => { if (a.getAttribute("href") === "#" + v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    const active = $(`.sections a[href="#${v}"]`); if (active) active.scrollIntoView({ block: "nearest", inline: "nearest" });
     if (v === "claims" && claimState.apply) claimState.apply(Object.fromEntries(new URLSearchParams(qs || "")));
     hideTip();
     window.scrollTo(0, 0);
