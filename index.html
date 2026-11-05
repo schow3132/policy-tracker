@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2026 Policy Tracker: what the nominees actually said</title>
+  <meta name="description" content="A sourced tracker of the policy positions and claims of 2026 Senate and Governor nominees in Michigan, Texas, Ohio, Wisconsin and Kansas. Every claim links to its source.">
+  <link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap top__inner">
+      <a class="brand" href="#overview">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span>Policy Tracker <small>2026 midterms</small></span>
+      </a>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#overview">Overview</a>
+        <a href="#policies">Policies</a>
+        <a href="#grid">Stance grid</a>
+        <a href="#claims">Claims</a>
+        <a href="#candidates">Candidates</a>
+        <a href="#money">Money</a>
+        <a href="#races">House</a>
+        <a href="#method">Method</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="notice" id="notice" role="note"></div>
+
+  <main id="main" class="wrap">
+    <p class="loading" id="loading">Loading tracker data…</p>
+
+    <!-- OVERVIEW -->
+    <section class="view" id="view-overview" hidden>
+      <div class="hero">
+        <p class="eyebrow" id="hero-eyebrow"></p>
+        <h1>What the nominees said, and where they said it.</h1>
+        <p class="lede">A tracker of the core policy positions of every Senate and Governor nominee in five states. Each position is coded only from something the candidate stated, and every claim links to its source, so you can check it yourself. Silence is never counted as a position.</p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+
+      <h2 class="h2">Statewide races</h2>
+      <p class="sub">Projected results as reported by news outlets. Nothing here is certified.</p>
+      <div class="races" id="race-cards"></div>
+
+      <h2 class="h2">Where the parties agree and split</h2>
+      <p class="sub">How each of the indexed policies is classified, based on the nominees' stated positions.</p>
+      <div class="card" id="consensus-chart"></div>
+
+      <h2 class="h2">U.S. House by state</h2>
+      <p class="sub" id="house-note"></p>
+      <div class="card" id="house-chart"></div>
+    </section>
+
+    <!-- POLICIES -->
+    <section class="view" id="view-policies" hidden>
+      <h1 class="h1">Policy index.</h1>
+      <p class="sub" id="policies-sub"></p>
+      <div class="filters" id="policy-filters"></div>
+      <div class="legend" id="policy-legend"></div>
+      <div class="policy-list" id="policy-list"></div>
+      <p class="fine" id="policy-method"></p>
+    </section>
+
+    <!-- STANCE GRID -->
+    <section class="view" id="view-grid" hidden>
+      <h1 class="h1">Every candidate, every policy.</h1>
+      <p class="sub">Each filled cell is a stated position. Hover or tap for what they said; the link opens the source. Blank means no stated position was found.</p>
+      <div class="legend" id="grid-legend"></div>
+      <div class="grid-scroll" id="stance-grid"></div>
+    </section>
+
+    <!-- CLAIMS -->
+    <section class="view" id="view-claims" hidden>
+      <h1 class="h1">Claims log.</h1>
+      <p class="sub">Every coded claim, paraphrased, with its source. <b>Primary</b> means the candidate's own site, plan or press release. <b>Secondary</b> means a news report of the candidate's own words or record.</p>
+      <div class="filters" id="claim-filters"></div>
+      <p class="count" id="claim-count" aria-live="polite"></p>
+      <div class="claims" id="claim-list"></div>
+    </section>
+
+    <!-- CANDIDATES -->
+    <section class="view" id="view-candidates" hidden>
+      <h1 class="h1">How fleshed out is each platform?</h1>
+      <p class="sub" id="cand-sub"></p>
+      <div class="legend" id="cand-legend"></div>
+      <div class="cands" id="cand-list"></div>
+      <p class="fine" id="cand-note"></p>
+    </section>
+
+    <!-- MONEY -->
+    <section class="view" id="view-money" hidden>
+      <h1 class="h1">Who is paying for it.</h1>
+      <p class="sub">Federal candidates only. Governor candidates file with state agencies, not the FEC.</p>
+      <h2 class="h2">Senate fundraising</h2>
+      <div class="card" id="senate-money"></div>
+      <p class="fine" id="senate-note"></p>
+      <h2 class="h2">Donor size mix</h2>
+      <p class="sub">Share of each candidate's individual contributions by donation size. Small-dollar (under $200) on the left, $2,000+ on the right.</p>
+      <div class="filters" id="donor-filters"></div>
+      <div class="legend" id="donor-legend"></div>
+      <div class="card" id="donor-chart"></div>
+      <p class="fine" id="donor-note"></p>
+    </section>
+
+    <!-- HOUSE -->
+    <section class="view" id="view-races" hidden>
+      <h1 class="h1">U.S. House nominees.</h1>
+      <p class="sub" id="house-sub"></p>
+      <div class="filters" id="house-filters"></div>
+      <p class="count" id="house-count" aria-live="polite"></p>
+      <div class="table-wrap"><table class="tbl" id="house-table"></table></div>
+      <p class="fine" id="house-fine"></p>
+    </section>
+
+    <!-- METHOD -->
+    <section class="view" id="view-method" hidden>
+      <h1 class="h1">Sources, method and gaps.</h1>
+      <p class="sub">How the tracker was built, and what is still missing. Gaps are listed on purpose.</p>
+      <div id="method-body"></div>
+    </section>
+  </main>
+
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+
+  <footer class="foot">
+    <div class="wrap">
+      <p id="foot-meta"></p>
+      <p>Positions are paraphrased from the cited sources. Corrections are welcome: open the source link and compare.</p>
+    </div>
+  </footer>
+
+  <script src="app.js?v=1"></script>
+</body>
+</html>
